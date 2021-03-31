@@ -11,14 +11,10 @@
         </div>
     </div>
     <% if (!user) { %>
-      <form class="form-inline" method="POST" action="/login">
-        <label for="email">Email:</label>
-        <input class="form-control" type="text" name="email" style="width: 100px; margin: 1em">
-        <button type="submit" class="btn btn-primary">Sign In</button>
-      </form>
+        <a role="button" class="btn btn-primary" href="/login">Log in</a>
+        <a role="button" class="btn btn-primary" href="/register">Register</a>
    <% } else { %>
     <form class="form-inline align-items-center" method="POST" action="/logout">
-      <p class="m-0">Logged In As: <%=user.email%>&nbsp&nbsp </p>
       <button type="submit" class="btn btn-outline-dark">Logout</button>
     </form>
    <% } %>

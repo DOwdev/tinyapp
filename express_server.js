@@ -10,12 +10,10 @@ app.set("view engine", "ejs");
 
 //helper function ->  will move later
 function generateRandomString(){
-    let id = crypto.randomBytes(64).toString('hex');
-    id = id.substring(0, 6);
-    console.log(id);
+    let id = crypto.randomBytes(3).toString('hex');
     return id;
-}
-generateRandomString();
+};
+
 
 const urlDatabase = {
     "b2xVn2": "http://www.lighthouselabs.ca",
@@ -36,8 +34,9 @@ app.get("/urls/new", (req,res)=>{
 });
 
 app.post("/urls", (req,res)=>{
-    console.log(req.body);
-    res.send('ok');
+    let id = generateRandomString();
+    urlDatabase[id]=req.body.longURL;
+    res.redirect(`/urls/${id}`);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -49,6 +48,12 @@ app.get("/urls/:shortURL", (req, res) => {
    }
    res.render("urls_show", templateVars);
   });
+
+ app.get('/u/:shortURL', (req,res)=>{
+    let shortURL = req.params.shortURL;
+    let longURL = urlDatabase[shortURL];
+    res.redirect(longURL);
+ }) 
 
 app.get('/urls.json', (req,res)=>{
     res.json(urlDatabase);

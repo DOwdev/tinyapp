@@ -99,13 +99,6 @@ app.get("/urls/:shortURL", (req, res) => {
     res.redirect("/urls");
  });
 
- app.post('/login', (req,res)=>{
-     let email = req.body.email;
-     res
-     .cookie('user_id', email)
-     .redirect("/urls");
- })
-
  app.post('/logout', (req, res)=>{
      res.clearCookie('user_id');
      res.redirect('/urls');
@@ -121,7 +114,6 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post('/register', (req, res)=>{
     let email = req.body.email;
     let password = req.body.password;
-    console.log(emailLookup(email));
     if(!email || !password){
         res.status(400)
         .send("Bad Request 400");
@@ -147,6 +139,27 @@ app.get('/login', (req,res)=>{
         user: users[req.cookies["user_id"]]
     }
     res.render('user_login', templateVars);
+})
+
+app.post('/login', (req,res)=>{
+    let email = req.body.email;
+    let password = req.body.password;
+    if(emailLookup(email)){
+        res.status(403).send("error 403");
+    }else{
+        for(let user in users){
+            if(users[user].email === email){
+                if(users[user].password === password){
+                    res
+                    .cookie('user_id', users[user].id)
+                    .redirect("/urls"); 
+                } else{
+                    res.status(403).send("error 403. Wrong password.");
+                }
+            }
+        }
+        
+    }
 })
 
 app.get('/urls.json', (req,res)=>{

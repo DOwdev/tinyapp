@@ -2,210 +2,210 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 const crypto = require('crypto');
-let cookieParser = require('cookie-parser')
+let cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser())
+app.use(cookieParser());
 
 app.set("view engine", "ejs");
 
 //helper function ->  will move later
-function generateRandomString(){
-    let id = crypto.randomBytes(3).toString('hex');
-    return id;
-};
+function generateRandomString() {
+  let id = crypto.randomBytes(3).toString('hex');
+  return id;
+}
 
 //helper function -> will move later
-function emailLookup(email){
-    let value = true;
-    for(let user in users){
-        if(users[user].email === email){
-            value = false;
-        }
+function emailLookup(email) {
+  let value = true;
+  for (let user in users) {
+    if (users[user].email === email) {
+      value = false;
     }
-    return value;
-};
+  }
+  return value;
+}
 
-function urlsForUser(id){
-    let urlDBForUser = {};
-    for(let url in urlDatabase){
-        if(urlDatabase[url].userID === id){
-            urlDBForUser[url]=urlDatabase[url];
-        }
+function urlsForUser(id) {
+  let urlDBForUser = {};
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      urlDBForUser[url] = urlDatabase[url];
     }
-    return urlDBForUser;
+  }
+  return urlDBForUser;
 }
 
 
 const urlDatabase = {
-    b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-    i3BoGr: { longURL: "https://www.google.ca", userID: "userRandomID" }
-  };
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "userRandomID" }
+};
 
-const users = { 
-    "userRandomID": {
-      id: "userRandomID", 
-      email: "user@example.com", 
-      password: "123"
-    },
-   "user2RandomID": {
-      id: "user2RandomID", 
-      email: "user2@example.com", 
-      password: "dishwasher-funk"
-    }
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "123"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
   }
+};
 
 app.get('/', (req,res)=>{
-    res.send('hello!');
+  res.send('hello!');
 });
 
 app.get("/urls", (req, res) => {
-    if(!req.cookies["user_id"]){
-        res.redirect("/login")
-    } else{
-        let newDB = urlsForUser(req.cookies["user_id"]);
-        const templateVars = { 
-            user: users[req.cookies["user_id"]],
-            urls: newDB
-        };
-      res.render("urls_index", templateVars);
-    }
-  });
+  if (!req.cookies["user_id"]) {
+    res.redirect("/login");
+  } else {
+    let newDB = urlsForUser(req.cookies["user_id"]);
+    const templateVars = {
+      user: users[req.cookies["user_id"]],
+      urls: newDB
+    };
+    res.render("urls_index", templateVars);
+  }
+});
 
 app.get("/urls/new", (req,res)=>{
-    if(!req.cookies["user_id"]){
-        res.redirect("/login")
-    } else{
-        const templateVars = { 
-            user: users[req.cookies["user_id"]],
-        };
-        res.render("urls_new", templateVars);
-    }
+  if (!req.cookies["user_id"]) {
+    res.redirect("/login");
+  } else {
+    const templateVars = {
+      user: users[req.cookies["user_id"]],
+    };
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.post("/urls", (req,res)=>{
-    if(!req.cookies["user_id"]){
-        res.status(403).send("not authorized")
-    }else{
-        let id = generateRandomString();
-        urlDatabase[id]={
-            longURL: req.body.longURL,
-            userID: req.cookies["user_id"]
-        };
-        res.redirect(`/urls/${id}`);
-    }
+  if (!req.cookies["user_id"]) {
+    res.status(403).send("not authorized");
+  } else {
+    let id = generateRandomString();
+    urlDatabase[id] = {
+      longURL: req.body.longURL,
+      userID: req.cookies["user_id"]
+    };
+    res.redirect(`/urls/${id}`);
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-    let shortURL = req.params.shortURL;
-    let longURL = urlDatabase[shortURL].longURL;
-    if(!req.cookies["user_id"] || urlDatabase[shortURL].userID !== req.cookies["user_id"]){
-        res.status(403).send("not authorized")
-    }else{
-   const templateVars = {
-       shortURL,
-       longURL,
-       user: users[req.cookies["user_id"]]
-   };
-   res.render("urls_show", templateVars);
-}
+  let shortURL = req.params.shortURL;
+  let longURL = urlDatabase[shortURL].longURL;
+  if (!req.cookies["user_id"] || urlDatabase[shortURL].userID !== req.cookies["user_id"]) {
+    res.status(403).send("not authorized");
+  } else {
+    const templateVars = {
+      shortURL,
+      longURL,
+      user: users[req.cookies["user_id"]]
+    };
+    res.render("urls_show", templateVars);
+  }
 });
 
-  app.post("/urls/:shortURL", (req, res) => {
-    let shortURL = req.params.shortURL;
-    if(!req.cookies["user_id"] || urlDatabase[shortURL].userID !== req.cookies["user_id"]){
-        res.status(403).send("not authorized")
-    }else{
+app.post("/urls/:shortURL", (req, res) => {
+  let shortURL = req.params.shortURL;
+  if (!req.cookies["user_id"] || urlDatabase[shortURL].userID !== req.cookies["user_id"]) {
+    res.status(403).send("not authorized");
+  } else {
     let newLongURL = req.body.newLongURL;
     urlDatabase[shortURL].longURL = newLongURL;
     res.redirect('/urls');
-    }
-   });
+  }
+});
 
- app.get('/u/:shortURL', (req,res)=>{
-    let shortURL = req.params.shortURL;
-    let longURL = urlDatabase[shortURL].longURL;
-    res.redirect(longURL);
- }); 
+app.get('/u/:shortURL', (req,res)=>{
+  let shortURL = req.params.shortURL;
+  let longURL = urlDatabase[shortURL].longURL;
+  res.redirect(longURL);
+});
 
- app.post('/urls/:shortURL/delete', (req,res) => {
-    let shortURL = req.params.shortURL;
-    if(!req.cookies["user_id"] || urlDatabase[shortURL].userID !== req.cookies["user_id"]){
-        res.status(403).send("not authorized")
-    }else{
+app.post('/urls/:shortURL/delete', (req,res) => {
+  let shortURL = req.params.shortURL;
+  if (!req.cookies["user_id"] || urlDatabase[shortURL].userID !== req.cookies["user_id"]) {
+    res.status(403).send("not authorized");
+  } else {
     delete urlDatabase[shortURL];
     res.redirect("/urls");
-    }
- });
+  }
+});
 
- app.post('/logout', (req, res)=>{
-     res.clearCookie('user_id');
-     res.redirect('/urls');
- })
+app.post('/logout', (req, res)=>{
+  res.clearCookie('user_id');
+  res.redirect('/urls');
+});
 
- app.get('/register',(req,res)=>{
-    const templateVars = { 
-        user: users[req.cookies["user_id"]]
-    };
-     res.render('user_register', templateVars);
- })
+app.get('/register',(req,res)=>{
+  const templateVars = {
+    user: users[req.cookies["user_id"]]
+  };
+  res.render('user_register', templateVars);
+});
 
 app.post('/register', (req, res)=>{
-    let email = req.body.email;
-    let password = req.body.password;
-    if(!email || !password){
-        res.status(400)
-        .send("Bad Request 400");
-    } else if(!emailLookup(email)){
-        res.status(400)
-        .send("Bad Request 400, email already in use");
-    }else{
+  let email = req.body.email;
+  let password = req.body.password;
+  if (!email || !password) {
+    res.status(400)
+      .send("Bad Request 400");
+  } else if (!emailLookup(email)) {
+    res.status(400)
+      .send("Bad Request 400, email already in use");
+  } else {
     let id = generateRandomString();
-    let newUser ={
-        id,
-        email,
-        password
-    }
+    let newUser = {
+      id,
+      email,
+      password
+    };
     users[id] = newUser;
     res
-    .cookie('user_id', id)
-    .redirect("/urls");
-}
-})
+      .cookie('user_id', id)
+      .redirect("/urls");
+  }
+});
 
 app.get('/login', (req,res)=>{
-    let templateVars = {
-        user: users[req.cookies["user_id"]]
-    }
-    res.render('user_login', templateVars);
-})
+  let templateVars = {
+    user: users[req.cookies["user_id"]]
+  };
+  res.render('user_login', templateVars);
+});
 
 app.post('/login', (req,res)=>{
-    let email = req.body.email;
-    let password = req.body.password;
-    if(emailLookup(email)){
-        res.status(403).send("error 403");
-    }else{
-        for(let user in users){
-            if(users[user].email === email){
-                if(users[user].password === password){
-                    res
-                    .cookie('user_id', users[user].id)
-                    .redirect("/urls"); 
-                } else{
-                    res.status(403).send("error 403. Wrong password.");
-                }
-            }
+  let email = req.body.email;
+  let password = req.body.password;
+  if (emailLookup(email)) {
+    res.status(403).send("error 403");
+  } else {
+    for (let user in users) {
+      if (users[user].email === email) {
+        if (users[user].password === password) {
+          res
+            .cookie('user_id', users[user].id)
+            .redirect("/urls");
+        } else {
+          res.status(403).send("error 403. Wrong password.");
         }
-        
+      }
     }
-})
+        
+  }
+});
 
 app.get('/urls.json', (req,res)=>{
 
-    res.json(urlDatabase);
+  res.json(urlDatabase);
 });
 
 app.listen(PORT, ()=>{
-    console.log(`example app listening on ${PORT}`)
+  console.log(`example app listening on ${PORT}`);
 });

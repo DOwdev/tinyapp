@@ -4,6 +4,8 @@ const PORT = 8080;
 const crypto = require('crypto');
 let cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
@@ -46,12 +48,12 @@ const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "123"
+    password: "$2b$10$qMcr7jJ77yZPb0F1KzRuZevd2rOrCxFozGjgR0dU1KZKVhuFoUMtq"
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    password: "$2b$10$qMcr7jJ77yZPb0F1KzRuZevd2rOrCxFozGjgR0dU1KZKVhuFoUMtq"
   }
 };
 
@@ -152,7 +154,7 @@ app.get('/register',(req,res)=>{
 
 app.post('/register', (req, res)=>{
   let email = req.body.email;
-  let password = req.body.password;
+  let password = bcrypt.hashSync(req.body.password, 10);
   if (!email || !password) {
     res.status(400)
       .send("Bad Request 400");
@@ -188,7 +190,7 @@ app.post('/login', (req,res)=>{
   } else {
     for (let user in users) {
       if (users[user].email === email) {
-        if (users[user].password === password) {
+        if (bcrypt.compareSync(password, users[user].password)) {
           res
             .cookie('user_id', users[user].id)
             .redirect("/urls");
@@ -205,6 +207,11 @@ app.get('/urls.json', (req,res)=>{
 
   res.json(urlDatabase);
 });
+
+app.get('/users.json', (req,res)=>{
+
+    res.json(users);
+  });
 
 app.listen(PORT, ()=>{
   console.log(`example app listening on ${PORT}`);

@@ -135,7 +135,7 @@ app.post('/register', (req, res)=>{
   if (!email || !password) {
     res.status(400)
       .send("Bad Request 400");
-  } else if (!emailLookup(email,users)) {
+  } else if (emailLookup(email,users)) {
     res.status(400)
       .send("Bad Request 400, email already in use");
   } else {
@@ -161,21 +161,17 @@ app.get('/login', (req,res)=>{
 app.post('/login', (req,res)=>{
   let email = req.body.email;
   let password = req.body.password;
-  if (emailLookup(email, users)) {
+  let userID = emailLookup(email, users);
+  if (!userID) {
     res.status(403).send("error 403");
   } else {
-    for (let user in users) {
-      if (users[user].email === email) {
-        if (bcrypt.compareSync(password, users[user].password)) {
-          req.session.user_id = users[user].id;
+        if (bcrypt.compareSync(password, users[userID].password)) {
+          req.session.user_id = userID;
             res.redirect("/urls");
         } else {
           res.status(403).send("error 403. Wrong password.");
         }
       }
-    }
-        
-  }
 });
 
 app.get('/urls.json', (req,res)=>{

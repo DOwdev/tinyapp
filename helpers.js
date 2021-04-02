@@ -7,14 +7,15 @@ function generateRandomString() {
   
 //looks if e-mail is already in DB
 function emailLookup(email, users) {
-    let value = true;
     for (let user in users) {
       if (users[user].email === email) {
-        value = false;
+        return users[user].id;
       }
     }
-    return value;
+    return false;
 }
+
+
   
 //gives object of urls that belong to a user
   function urlsForUser(id, urlDatabase) {

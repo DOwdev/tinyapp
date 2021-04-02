@@ -5,6 +5,7 @@ const crypto = require('crypto');
 let cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
+const { generateRandomString, emailLookup, urlsForUser } = require('./helpers');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
@@ -14,34 +15,6 @@ app.use(cookieSession({
   }));
 
 app.set("view engine", "ejs");
-
-//helper function ->  will move later
-function generateRandomString() {
-  let id = crypto.randomBytes(3).toString('hex');
-  return id;
-}
-
-//helper function -> will move later
-function emailLookup(email) {
-  let value = true;
-  for (let user in users) {
-    if (users[user].email === email) {
-      value = false;
-    }
-  }
-  return value;
-}
-
-function urlsForUser(id) {
-  let urlDBForUser = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      urlDBForUser[url] = urlDatabase[url];
-    }
-  }
-  return urlDBForUser;
-}
-
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
@@ -69,7 +42,7 @@ app.get("/urls", (req, res) => {
   if (!req.session.user_id) {
     res.redirect("/login");
   } else {
-    let newDB = urlsForUser(req.session.user_id);
+    let newDB = urlsForUser(req.session.user_id, urlDatabase);
     const templateVars = {
       user: users[req.session.user_id],
       urls: newDB
@@ -162,7 +135,7 @@ app.post('/register', (req, res)=>{
   if (!email || !password) {
     res.status(400)
       .send("Bad Request 400");
-  } else if (!emailLookup(email)) {
+  } else if (!emailLookup(email,users)) {
     res.status(400)
       .send("Bad Request 400, email already in use");
   } else {
@@ -188,7 +161,7 @@ app.get('/login', (req,res)=>{
 app.post('/login', (req,res)=>{
   let email = req.body.email;
   let password = req.body.password;
-  if (emailLookup(email)) {
+  if (emailLookup(email, users)) {
     res.status(403).send("error 403");
   } else {
     for (let user in users) {

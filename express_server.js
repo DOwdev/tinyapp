@@ -2,9 +2,10 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 const crypto = require('crypto');
-let cookieSession = require('cookie-session');
+const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
+const methodOverride = require('method-override');
 const { generateRandomString, emailLookup, urlsForUser } = require('./helpers');
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -12,9 +13,10 @@ app.use(cookieSession({
     name: 'session',
     keys: ['key1', 'key2'],
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }));
-
+}));
+app.use(methodOverride('_method'))
 app.set("view engine", "ejs");
+
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
@@ -35,7 +37,7 @@ const users = {
 };
 
 app.get('/', (req,res)=>{
-  res.send('hello!');
+  res.redirect('/urls');
 });
 
 app.get("/urls", (req, res) => {
@@ -51,6 +53,7 @@ app.get("/urls", (req, res) => {
   }
 });
 
+//GET urls_new to add new URL for user
 app.get("/urls/new", (req,res)=>{
   if (!req.session.user_id) {
     res.redirect("/login");
@@ -62,6 +65,7 @@ app.get("/urls/new", (req,res)=>{
   }
 });
 
+//POST new url into database and redirect to GET /urls
 app.post("/urls", (req,res)=>{
   if (!req.session.user_id) {
     res.status(403).send("not authorized");
@@ -75,6 +79,7 @@ app.post("/urls", (req,res)=>{
   }
 });
 
+//GET urls_show to allow for 
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL].longURL;
@@ -90,7 +95,8 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 });
 
-app.post("/urls/:shortURL", (req, res) => {
+//Edit button to PUT new URL
+app.put("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   if (!req.session.user_id || urlDatabase[shortURL].userID !== req.session.user_id) {
     res.status(403).send("not authorized");
@@ -101,13 +107,15 @@ app.post("/urls/:shortURL", (req, res) => {
   }
 });
 
+//When shortURL used, send to longURL
 app.get('/u/:shortURL', (req,res)=>{
   let shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
 });
 
-app.post('/urls/:shortURL/delete', (req,res) => {
+//DELETE URL
+app.delete('/urls/:shortURL/delete', (req,res) => {
   let shortURL = req.params.shortURL;
   if (!req.session.user_id || urlDatabase[shortURL].userID !== req.session.user_id) {
     res.status(403).send("not authorized");
@@ -117,11 +125,13 @@ app.post('/urls/:shortURL/delete', (req,res) => {
   }
 });
 
+//user logout
 app.post('/logout', (req, res)=>{
   req.session = null;
   res.redirect('/urls');
 });
 
+//send to register page
 app.get('/register',(req,res)=>{
   const templateVars = {
     user: users[req.session.user_id]
@@ -129,6 +139,7 @@ app.get('/register',(req,res)=>{
   res.render('user_register', templateVars);
 });
 
+//register new user
 app.post('/register', (req, res)=>{
   let email = req.body.email;
   let password = bcrypt.hashSync(req.body.password, 10);
@@ -151,6 +162,7 @@ app.post('/register', (req, res)=>{
   }
 });
 
+//send user to login page
 app.get('/login', (req,res)=>{
   let templateVars = {
     user: users[req.session.user_id]
@@ -158,6 +170,7 @@ app.get('/login', (req,res)=>{
   res.render('user_login', templateVars);
 });
 
+//login user
 app.post('/login', (req,res)=>{
   let email = req.body.email;
   let password = req.body.password;
@@ -173,16 +186,6 @@ app.post('/login', (req,res)=>{
         }
       }
 });
-
-app.get('/urls.json', (req,res)=>{
-
-  res.json(urlDatabase);
-});
-
-app.get('/users.json', (req,res)=>{
-
-    res.json(users);
-  });
 
 app.listen(PORT, ()=>{
   console.log(`example app listening on ${PORT}`);

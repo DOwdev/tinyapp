@@ -12,11 +12,9 @@ function emailLookup(email, users) {
         return users[user].id;
       }
     }
-    return false;
+    return undefined;
 }
 
-
-  
 //gives object of urls that belong to a user
   function urlsForUser(id, urlDatabase) {
     let urlDBForUser = {};
